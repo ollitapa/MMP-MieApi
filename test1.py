@@ -16,12 +16,11 @@
 
 
 from mupif import FunctionID
-### Function IDs until implemented at mupif ###
+import mmp_mie_api as mie
+# Function IDs until implemented at mupif ###
 FunctionID.FuncID_ScatteringCrossSections = 55
 FunctionID.FuncID_ScatteringInvCumulDist = 56
 ###############################################
-
-import mmp_mie_api as mie
 
 
 if __name__ == '__main__':

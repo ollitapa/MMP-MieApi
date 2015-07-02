@@ -18,7 +18,7 @@ from setuptools import setup, find_packages
 
 setup(name='mmp_mie_api',
       version='0.1',
-      description='API for MMPRaytracer Mie model to the MMP modelling platform',
+      description='API for MMPRaytracer Mie model to the MMP platform',
       author='Olli Tapaninen, Mikko Majanen',
       author_email='olli.tapaninen@gmail.com, mikko.majanen@vtt.fi',
       packages=find_packages(),
