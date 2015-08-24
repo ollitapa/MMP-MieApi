@@ -132,7 +132,7 @@ class MMPMie(Application):
                                units=None,
                                objectID=objID.OBJ_PARTICLE_TYPE_1)
 
-        key = (nr.getPropertID(), nr.getObjectID(), 0)
+        key = (nr.getPropertyID(), nr.getObjectID(), 0)
         self.properties.set_value(key, nr)
         #############################
 
@@ -156,7 +156,7 @@ class MMPMie(Application):
         :param Field field: Remote field to be registered by the application
         """
         # Set the new property to container
-        key = (field.getPropertID(), field.time)
+        key = (field.getPropertyID(), field.time)
         self.fields.set_value(key, field)
 
     def getProperty(self, propID, time, objectID=0):
@@ -196,7 +196,7 @@ class MMPMie(Application):
         """
 
         # Set the new property to container
-        key = (newProp.getPropertID(), objectID, newProp.time)
+        key = (newProp.getPropertyID(), objectID, newProp.time)
         self.properties[key] = newProp
 
     def getFunction(self, funcID, objectID=0):
