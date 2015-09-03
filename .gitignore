@@ -64,4 +64,5 @@ target/
 *.vtk
 *.mphtxt
 *.db
+*.json
 MieDataFiles
