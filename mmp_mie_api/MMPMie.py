@@ -91,7 +91,7 @@ class MMPMie(Application):
         # Properties
         # Key should be in form of tuple (propertyID, objectID, tstep)
         idx = pd.MultiIndex.from_tuples(
-            ['aaa'], names=['propertyID', 'objectID', 'tstep'])
+            [('a', 'a', 'a')], names=['propertyID', 'objectID', 'tstep'])
         self.properties = pd.Series(index=idx, dtype=Property.Property)
 
         # Fields
@@ -133,7 +133,8 @@ class MMPMie(Application):
                                objectID=objID.OBJ_PARTICLE_TYPE_1)
 
         key = (nr.getPropertyID(), nr.getObjectID(), 0)
-        self.properties.set_value(key, nr)
+
+        self.properties.ix[key] = nr
         #############################
 
     def getField(self, fieldID, time):
