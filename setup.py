@@ -26,7 +26,8 @@ setup(name='mmp_mie_api',
       package_data={'mmp_mie_api': ['logging.conf']},
       entry_points={
           'console_scripts':
-          ['runMieServer = mmp_mie_api.mieServer:main']
+          ['runMieServer = mmp_mie_api.mieServer:main',
+           'killMieServer = mmp_mie_api.killMieServer:main']
       },
       eager_resources={},
       # This line is only for python setup.py bdist, for PyPI see MANIFEST.in
