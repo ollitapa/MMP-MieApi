@@ -91,12 +91,13 @@ class MMPMie(Application):
         # Properties
         # Key should be in form of tuple (propertyID, objectID, tstep)
         idx = pd.MultiIndex.from_tuples(
-            [('a', 'a', 'a')], names=['propertyID', 'objectID', 'tstep'])
+            [(1.0, 1.0, 1.0)], names=['propertyID', 'objectID', 'tstep'])
         self.properties = pd.Series(index=idx, dtype=Property.Property)
 
         # Fields
         # Key should be in form of tuple (fieldID, tstep)
-        idxf = pd.MultiIndex.from_tuples(['aa'], names=['fieldID', 'tstep'])
+        idxf = pd.MultiIndex.from_tuples(
+            [(1.0, 1.0)], names=['fieldID', 'tstep'])
         self.fields = pd.Series(index=idxf, dtype=Field.Field)
 
         self.mieThread = None
@@ -117,11 +118,9 @@ class MMPMie(Application):
             objectID=0)
 
         # Empty old properties
-        if not self.properties.empty:
-            self.properties.drop(self.properties.index, inplace=True)
+        #self.properties.drop(self.properties.index, inplace=True)
         # Empty old fields
-        if not self.fields.empty:
-            self.fields.drop(self.fields.index, inplace=True)
+        #self.fields.drop(self.fields.index, inplace=True)
 
         # Refractive index of particle
         v = 1.83
@@ -133,8 +132,8 @@ class MMPMie(Application):
                                objectID=objID.OBJ_PARTICLE_TYPE_1)
 
         key = (nr.getPropertyID(), nr.getObjectID(), 0)
+        self.properties.loc[key] = nr
 
-        self.properties.ix[key] = nr
         #############################
 
     def getField(self, fieldID, time):
