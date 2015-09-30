@@ -41,7 +41,12 @@ def main():
     sys.path.append(os.getcwd())
 
     # Load config
-    tConf = importlib.import_module(args.configFile)
+    conf = args.configFile
+    if conf[-3:] == '.py':
+        conf = conf[:-3]
+    print(conf)
+
+    tConf = importlib.import_module(conf)
 
     # locate nameserver
     ns = PyroUtil.connectNameServer(nshost=tConf.nshost,
@@ -62,7 +67,7 @@ def main():
                                   portRange=tConf.jobManPortsForJobs,
                                   jobManWorkDir=tConf.jobManWorkDir,
                                   serverConfigPath=tConf.serverConfigPath,
-                                  serverConfigFile=args.configFile,
+                                  serverConfigFile=conf,
                                   jobMan2CmdPath=tConf.jobMan2CmdPath,
                                   maxJobs=tConf.jobManMaxJobs,
                                   jobMancmdCommPort=tConf.jobManSocket)
