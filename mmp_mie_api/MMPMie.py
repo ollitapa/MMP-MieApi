@@ -22,13 +22,15 @@ import os
 import Pyro4
 import h5py
 from mupif import APIError
-from mupif import Property, Field
+from mupif import Field
 from mupif import PropertyID, FunctionID, FieldID
 from mupif import ValueType
 from mupif.Application import Application
+from mupif.Property import Property
 from .mie import mieDatabase
 
 import pandas as pd
+import numpy as np
 import initialConfiguration as initConf
 import objID
 
@@ -59,6 +61,9 @@ PropertyID.PID_NumberOfRays = 23
 PropertyID.PID_LEDSpectrum = 24
 PropertyID.PID_ParticleNumberDensity = 25
 PropertyID.PID_ParticleRefractiveIndex = 26
+
+PropertyID.PID_ScatteringCrossSections = 28
+PropertyID.PID_InverseCumulativeDist = 29
 
 FieldID.FID_HeatSourceVol = 33
 ##########################################################
@@ -92,7 +97,7 @@ class MMPMie(Application):
         # Key should be in form of tuple (propertyID, objectID, tstep)
         idx = pd.MultiIndex.from_tuples(
             [(1.0, 1.0, 1.0)], names=['propertyID', 'objectID', 'tstep'])
-        self.properties = pd.Series(index=idx, dtype=Property.Property)
+        self.properties = pd.Series(index=idx, dtype=Property)
 
         # Fields
         # Key should be in form of tuple (fieldID, tstep)
@@ -106,31 +111,40 @@ class MMPMie(Application):
         self.invCDF = None
 
         #############################
-        # Initial values
-        self._scatCrossFunc = FunctionWithData(
-            funcID=FunctionID.FuncID_ScatteringCrossSections,
-            objectID=0)
-
-        self._invPhaseFunc = FunctionWithData(
-            funcID=FunctionID.FuncID_ScatteringInvCumulDist,
-            objectID=0)
         # Empty old properties
         self.properties.drop(self.properties.index, inplace=True)
         # Empty old fields
         self.fields.drop(self.fields.index, inplace=True)
 
+        # Initial values
+        scatCross = Property(value=0,
+                             propID=PropertyID.PID_ScatteringCrossSections,
+                             valueType=ValueType.Vector,
+                             time=0.0,
+                             units=None,
+                             objectID=objID.OBJ_PARTICLE_TYPE_1)
+
+        invPhase = Property(value=0,
+                            propID=PropertyID.PID_InverseCumulativeDist,
+                            valueType=ValueType.Vector,
+                            time=0.0,
+                            units=None,
+                            objectID=objID.OBJ_PARTICLE_TYPE_1)
         # Refractive index of particle
         v = 1.83
-        nr = Property.Property(value=v,
-                               propID=PropertyID.PID_ParticleRefractiveIndex,
-                               valueType=ValueType.Scalar,
-                               time=0.0,
-                               units=None,
-                               objectID=objID.OBJ_PARTICLE_TYPE_1)
+        nr = Property(value=v,
+                      propID=PropertyID.PID_ParticleRefractiveIndex,
+                      valueType=ValueType.Scalar,
+                      time=0.0,
+                      units=None,
+                      objectID=objID.OBJ_PARTICLE_TYPE_1)
 
         key = (nr.getPropertyID(), nr.getObjectID(), 0)
         self.properties.loc[key] = nr
-
+        key = (scatCross.getPropertyID(), scatCross.getObjectID(), 0)
+        self.properties.loc[key] = scatCross
+        key = (invPhase.getPropertyID(), invPhase.getObjectID(), 0)
+        self.properties.loc[key] = invPhase
         #############################
 
     def getField(self, fieldID, time):
@@ -169,18 +183,19 @@ class MMPMie(Application):
         :rtype: Property
         """
         key = (propID, objectID, time)
-        if key not in self.properties.index:
-            # TODO: Implement property initialization
-            print("NOT IMPLEMENTED")
+        if propID not in self.properties.index:
             raise APIError.APIError('Unknown property ID')
 
-        prop = self.properties[key]
-        # Chek if object is registered to Pyro
+        if key not in self.properties.index:
+            raise Exception('Not implemented')
+        else:
+            prop = self.properties[key]
+
+        # Check pyro registering if applicaple
         if hasattr(self, '_pyroDaemon') and not hasattr(prop, '_PyroURI'):
             uri = self._pyroDaemon.register(prop)
             prop._PyroURI = uri
 
-        # TODO: Interpolation between timesteps.
         return(prop)
 
     def setProperty(self, newProp, objectID=0):
@@ -195,34 +210,6 @@ class MMPMie(Application):
         # Set the new property to container
         key = (newProp.getPropertyID(), objectID, newProp.time)
         self.properties[key] = newProp
-
-    def getFunction(self, funcID, objectID=0):
-        """
-        Returns function identified by its ID
-
-        :param FunctionID funcID: function ID
-        :param int objectID: Identifies optional object/submesh on
-        which property is evaluated (optional, default 0)
-
-        :return: Returns requested function
-        :rtype: Function
-        """
-
-        if (funcID == FunctionID.FuncID_ScatteringCrossSections):
-            # Check for pyro
-            f = self._scatCrossFunc
-        elif(funcID == FunctionID.FuncID_ScatteringInvCumulDist):
-            # Check for pyro
-            f = self._invPhaseFunc
-        else:
-            raise APIError.APIError('Unknown function ID')
-
-        # Check pyro registering if applicaple
-        if hasattr(self, '_pyroDaemon') and not hasattr(f, '_PyroURI'):
-            uri = self._pyroDaemon.register(f)
-            f._PyroURI = uri
-
-        return(f)
 
     def getMesh(self, tstep):
         """
@@ -293,7 +280,8 @@ class MMPMie(Application):
                   'wavelen_min': w_min,
                   'particle_n': p_num,
                   'particle_max': p_max,
-                  'particle_min': p_min
+                  'particle_min': p_min,
+                  'tstep': tstep
                   }
 
         # Start thread to start Mie calculation
@@ -374,6 +362,8 @@ class MMPMie(Application):
             self.pyroDaemon.shutdown()
 
     def _startMieProcess(self, **kwargs):
+        tstep = kwargs['tstep']
+        del kwargs['tstep']
         # Mie database
         mieDB = mieDatabase.MieDatabase()
         # Get parameters
@@ -384,5 +374,14 @@ class MMPMie(Application):
         self.crossSections = f['particleData']['0']['crossSections'][:]
         self.invCDF = f['particleData']['0']['inverseCDF'][:]
 
-        self._scatCrossFunc.setData(self.crossSections)
-        self._invPhaseFunc.setData(self.invCDF)
+        key = (PropertyID.PID_ScatteringCrossSections,
+               objID.OBJ_PARTICLE_TYPE_1,
+               tstep)
+
+        self.properties[key].value = self.crossSections
+
+        key = (PropertyID.PID_InverseCumulativeDist,
+               objID.OBJ_PARTICLE_TYPE_1,
+               tstep)
+
+        self.properties[key].value = self.invCDF
