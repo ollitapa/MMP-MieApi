@@ -32,7 +32,7 @@ import pandas as pd
 import initialConfiguration as initConf
 import objID
 
-from FunctionCaller import FunctionCaller
+from MieFunctions import FunctionWithData
 import logging
 import logging.config
 from pkg_resources import resource_filename
@@ -107,20 +107,17 @@ class MMPMie(Application):
 
         #############################
         # Initial values
-
-        self._scatCrossFunc = FunctionCaller(
-            callback=self._scatteringCrossSections,
+        self._scatCrossFunc = FunctionWithData(
             funcID=FunctionID.FuncID_ScatteringCrossSections,
             objectID=0)
-        self._invPhaseFunc = FunctionCaller(
-            callback=self._inverseCumulativePhaseFunction,
+
+        self._invPhaseFunc = FunctionWithData(
             funcID=FunctionID.FuncID_ScatteringInvCumulDist,
             objectID=0)
-
         # Empty old properties
-        #self.properties.drop(self.properties.index, inplace=True)
+        self.properties.drop(self.properties.index, inplace=True)
         # Empty old fields
-        #self.fields.drop(self.fields.index, inplace=True)
+        self.fields.drop(self.fields.index, inplace=True)
 
         # Refractive index of particle
         v = 1.83
@@ -210,15 +207,17 @@ class MMPMie(Application):
         :return: Returns requested function
         :rtype: Function
         """
-        f = 0
+
         if (funcID == FunctionID.FuncID_ScatteringCrossSections):
+            # Check for pyro
             f = self._scatCrossFunc
         elif(funcID == FunctionID.FuncID_ScatteringInvCumulDist):
+            # Check for pyro
             f = self._invPhaseFunc
         else:
             raise APIError.APIError('Unknown function ID')
 
-        # Check for pyro registeration
+        # Check pyro registering if applicaple
         if hasattr(self, '_pyroDaemon') and not hasattr(f, '_PyroURI'):
             uri = self._pyroDaemon.register(f)
             f._PyroURI = uri
@@ -385,8 +384,5 @@ class MMPMie(Application):
         self.crossSections = f['particleData']['0']['crossSections'][:]
         self.invCDF = f['particleData']['0']['inverseCDF'][:]
 
-    def _scatteringCrossSections(self, d):
-        return self.crossSections
-
-    def _inverseCumulativePhaseFunction(self, d):
-        return self.invCDF
+        self._scatCrossFunc.setData(self.crossSections)
+        self._invPhaseFunc.setData(self.invCDF)
