@@ -61,11 +61,15 @@ PropertyID.PID_NumberOfRays = 23
 PropertyID.PID_LEDSpectrum = 24
 PropertyID.PID_ParticleNumberDensity = 25
 PropertyID.PID_ParticleRefractiveIndex = 26
+PropertyID.PID_EmissionSpectrum = 2121
+PropertyID.PID_ExcitationSpectrum = 2222
+PropertyID.PID_AsorptionSpectrum = 2323
 
 PropertyID.PID_ScatteringCrossSections = 28
 PropertyID.PID_InverseCumulativeDist = 29
 
 FieldID.FID_HeatSourceVol = 33
+FieldID.FID_HeatSourceSurf = 34
 ##########################################################
 
 ### Function IDs until implemented at mupif ###
@@ -192,9 +196,9 @@ class MMPMie(Application):
             prop = self.properties[key]
 
         # Check pyro registering if applicaple
-        if hasattr(self, '_pyroDaemon') and not hasattr(prop, '_PyroURI'):
-            uri = self._pyroDaemon.register(prop)
-            prop._PyroURI = uri
+        # if hasattr(self, '_pyroDaemon') and not hasattr(prop, '_PyroURI'):
+        #    uri = self._pyroDaemon.register(prop)
+        #    prop._PyroURI = uri
 
         return(prop)
 
@@ -262,8 +266,18 @@ class MMPMie(Application):
 
         #waves = np.linspace(w_min, w_max, w_num)
 
+        # Particle refractive index
+        # key = (PropertyID.PID_ParticleRefractiveIndex,
+        #       objID.OBJ_PARTICLE_TYPE_1, tstep)
+        #n_p = self.properties[key].getValue()
         n_p = 1.83
+
+        # Host medium refractive index
+        # key = (PropertyID.PID_RefractiveIndex,
+        #       objID.OBJ_CONE, tstep)
+        #n_s = self.properties[key].getValue()
         n_s = 1.55
+
         # log mean in microns
         mu = 3
         # log standard deviation in microns
