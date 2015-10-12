@@ -23,7 +23,7 @@ import Pyro4
 import h5py
 from mupif import APIError
 from mupif import Field
-from mupif import PropertyID, FunctionID, FieldID
+from mupif import PropertyID, FieldID
 from mupif import ValueType
 from mupif.Application import Application
 from mupif.Property import Property
@@ -34,7 +34,6 @@ import numpy as np
 import initialConfiguration as initConf
 import objID
 
-from MieFunctions import FunctionWithData
 import logging
 import logging.config
 from pkg_resources import resource_filename
@@ -56,26 +55,21 @@ Pyro4.config.SERIALIZER = 'pickle'
 
 
 ### FID and PID definitions untill implemented at mupif###
-PropertyID.PID_RefractiveIndex = 22
-PropertyID.PID_NumberOfRays = 23
-PropertyID.PID_LEDSpectrum = 24
-PropertyID.PID_ParticleNumberDensity = 25
-PropertyID.PID_ParticleRefractiveIndex = 26
-PropertyID.PID_EmissionSpectrum = 2121
-PropertyID.PID_ExcitationSpectrum = 2222
-PropertyID.PID_AsorptionSpectrum = 2323
+PropertyID.PID_RefractiveIndex = "PID_RefractiveIndex"
+PropertyID.PID_NumberOfRays = "PID_NumberOfRays"
+PropertyID.PID_LEDSpectrum = "PID_LEDSpectrum"
+PropertyID.PID_ParticleNumberDensity = "PID_ParticleNumberDensity"
+PropertyID.PID_ParticleRefractiveIndex = "PID_ParticleRefractiveIndex"
+PropertyID.PID_EmissionSpectrum = "PID_EmissionSpectrum"
+PropertyID.PID_ExcitationSpectrum = "PID_ExcitationSpectrum"
+PropertyID.PID_AsorptionSpectrum = "PID_AsorptionSpectrum"
 
-PropertyID.PID_ScatteringCrossSections = 28
-PropertyID.PID_InverseCumulativeDist = 29
+PropertyID.PID_ScatteringCrossSections = "PID_ScatteringCrossSections"
+PropertyID.PID_InverseCumulativeDist = "PID_InverseCumulativeDist"
 
-FieldID.FID_HeatSourceVol = 33
-FieldID.FID_HeatSourceSurf = 34
+FieldID.FID_HeatSourceVol = "FID_HeatSourceVol"
+FieldID.FID_HeatSourceSurf = "FID_HeatSourceSurf"
 ##########################################################
-
-### Function IDs until implemented at mupif ###
-FunctionID.FuncID_ScatteringCrossSections = 55
-FunctionID.FuncID_ScatteringInvCumulDist = 56
-###############################################
 
 
 class MMPMie(Application):
@@ -100,13 +94,14 @@ class MMPMie(Application):
         # Properties
         # Key should be in form of tuple (propertyID, objectID, tstep)
         idx = pd.MultiIndex.from_tuples(
-            [(1.0, 1.0, 1.0)], names=['propertyID', 'objectID', 'tstep'])
+            [("propertyID", 1.0, 1.0)],
+            names=['propertyID', 'objectID', 'tstep'])
         self.properties = pd.Series(index=idx, dtype=Property)
 
         # Fields
         # Key should be in form of tuple (fieldID, tstep)
         idxf = pd.MultiIndex.from_tuples(
-            [(1.0, 1.0)], names=['fieldID', 'tstep'])
+            [("fieldID", 1.0)], names=['fieldID', 'tstep'])
         self.fields = pd.Series(index=idxf, dtype=Field.Field)
 
         self.mieThread = None
@@ -294,8 +289,7 @@ class MMPMie(Application):
                   'wavelen_min': w_min,
                   'particle_n': p_num,
                   'particle_max': p_max,
-                  'particle_min': p_min,
-                  'tstep': tstep
+                  'particle_min': p_min
                   }
 
         # Start thread to start Mie calculation
@@ -376,8 +370,7 @@ class MMPMie(Application):
             self.pyroDaemon.shutdown()
 
     def _startMieProcess(self, **kwargs):
-        tstep = kwargs['tstep']
-        del kwargs['tstep']
+
         # Mie database
         mieDB = mieDatabase.MieDatabase()
         # Get parameters
@@ -390,12 +383,12 @@ class MMPMie(Application):
 
         key = (PropertyID.PID_ScatteringCrossSections,
                objID.OBJ_PARTICLE_TYPE_1,
-               tstep)
+               0)
 
         self.properties[key].value = self.crossSections
 
         key = (PropertyID.PID_InverseCumulativeDist,
                objID.OBJ_PARTICLE_TYPE_1,
-               tstep)
+               0)
 
         self.properties[key].value = self.invCDF
