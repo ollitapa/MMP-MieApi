@@ -317,43 +317,6 @@ class MMPMie(Application):
         """
         return(not self.mieThread.isAlive())
 
-    def finishStep(self, tstep):
-        """
-        Called after a global convergence within a time step is achieved.
-
-        :param TimeStep tstep: Solution step
-        """
-
-    def getCriticalTimeStep(self):
-        """
-        :return: Returns the actual (related to current state) critical time
-         step increment
-        :rtype: float
-        """
-
-    def getAssemblyTime(self, tstep):
-        """
-        Returns the assembly time related to given time step.
-        The registered fields (inputs) should be evaluated in this time.
-
-        :param TimeStep tstep: Solution step
-        :return: Assembly time
-        :rtype: float, TimeStep
-        """
-
-    def storeState(self, tstep):
-        """
-        Store the solution state of an application.
-
-        :param TimeStep tstep: Solution step
-        """
-
-    def restoreState(self, tstep):
-        """
-        Restore the saved state of an application.
-        :param TimeStep tstep: Solution step
-        """
-
     def getApplicationSignature(self):
         """
         :return: Returns the application identification
