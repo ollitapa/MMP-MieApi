@@ -21,6 +21,7 @@ import os
 from mupif import PyroUtil, JobManager as jb
 import logging
 logger = logging.getLogger()
+from .MMPMie import MMPMie
 
 
 # required firewall settings (on ubuntu):
@@ -81,6 +82,44 @@ def main():
     print("Started " + tConf.jobManName)
     # waits for requests
     daemon.requestLoop()
+
+
+def runSingleServerInstance():
+    '''
+    Run a single instance of the Mie server.
+    The configuration file given in args must include the following:
+    server,
+    serverPort,
+    serverNathost,
+    serverNatport,
+    nshost,
+    nsport,
+    appName,
+    hkey
+    '''
+    # Parse arguments
+    args = parser.parse_args()
+    sys.path.append(os.getcwd())
+
+    # Load config
+    conf = args.configFile
+    if conf[-3:] == '.py':
+        conf = conf[:-3]
+    print(conf)
+
+    cfg = importlib.import_module(conf)
+
+    app = MMPMie('localhost')
+
+    PyroUtil.runAppServer(cfg.server,
+                          cfg.serverPort,
+                          cfg.serverNathost,
+                          cfg.serverNatport,
+                          cfg.nshost,
+                          cfg.nsport,
+                          cfg.appName,
+                          cfg.hkey,
+                          app=app)
 
 
 if __name__ == '__main__':
