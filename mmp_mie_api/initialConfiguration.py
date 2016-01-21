@@ -34,13 +34,7 @@ def checkRequiredParameters(props, pID=PropertyID):
     are present.
     """
     # TODO: Check!
-    """
-        PropertyID.PID_RefractiveIndex = 22
-        PropertyID.PID_NumberOfRays = 23
-        PropertyID.PID_LEDSpectrum = 24
-        PropertyID.PID_ParticleNumberDensity = 25
-        PropertyID.PID_ParticleRefractiveIndex = 26
-    """
+
     #print("Property keys:")
     # for key in props.index:
     #        print(key)
