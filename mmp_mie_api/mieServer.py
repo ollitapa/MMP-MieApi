@@ -18,6 +18,10 @@ import importlib
 import argparse
 import sys
 import os
+import Pyro4
+import signal
+from time import sleep
+from .sshTunnel import SshTunnel
 from mupif import PyroUtil, JobManager as jb
 import logging
 logger = logging.getLogger()
@@ -121,6 +125,103 @@ def runSingleServerInstance():
                           cfg.hkey,
                           app=app)
 
+
+def runSingleServerInstanceNoNat():
+    # Parse arguments
+    args = parser.parse_args()
+    sys.path.append(os.getcwd())
+
+    # Load config
+    conf = args.configFile
+    if conf[-3:] == '.py':
+        conf = conf[:-3]
+    print(conf)
+
+    cfg = importlib.import_module(conf)
+
+    app = MMPMie('localhost')
+
+    # Creates deamon, register the app in it
+    daemon = Pyro4.Daemon(host=cfg.server,
+                          port=cfg.serverPort)
+    uri = daemon.register(app)
+
+    # Get nameserver
+    ns = Pyro4.locateNS(host=cfg.nshost, port=cfg.nsport, hmac_key=cfg.hkey)
+    # Register app
+    ns.register(cfg.appName, uri)
+
+    print(uri)
+    # Deamon loops at the end
+    daemon.requestLoop()
+
+
+def runSingleServerInstanceSSHtunnel():
+    # Parse arguments
+    args = parser.parse_args()
+    sys.path.append(os.getcwd())
+
+    # Load config
+    conf = args.configFile
+    if conf[-3:] == '.py':
+        conf = conf[:-3]
+    print(conf)
+
+    cfg = importlib.import_module(conf)
+
+    # Load the App
+    app = MMPMie('localhost')
+
+    # Prepare ssh tunnels
+    pyroTunnel = SshTunnel(localport=cfg.serverPort,
+                           remoteport=cfg.serverPort,
+                           remoteuser=cfg.hostUserName,
+                           remotehost=cfg.server,
+                           reverse=True)
+    nsTunnel = SshTunnel(localport=cfg.nsport,
+                         remoteport=cfg.nsport,
+                         remoteuser=cfg.hostUserName,
+                         remotehost=cfg.nshost,
+                         reverse=False)
+
+    try:
+
+        # Open tunnels
+        pyroTunnel.run()
+        nsTunnel.run()
+        sleep(1)
+
+        # Creates deamon, register the app in it
+        daemon = Pyro4.Daemon(host='localhost',
+                              port=cfg.serverPort)
+        uri = daemon.register(app)
+        print(uri)
+
+        # Get nameserver
+        ns = Pyro4.locateNS(host='localhost',
+                            port=cfg.nsport,
+                            hmac_key=cfg.hkey)
+        # Register app
+        ns.register(cfg.appName, uri)
+        print(uri)
+
+        # Shutdown handler. Remember to close ssh tunnels
+        def signal_handler(signal, frame):
+            print('Shutting down!')
+            pyroTunnel.terminate()
+            nsTunnel.terminate()
+            sys.exit(0)
+
+        signal.signal(signal.SIGINT, signal_handler)
+
+        # Deamon loops at the end
+        daemon.requestLoop()
+
+    except:
+        pyroTunnel.terminate()
+        nsTunnel.terminate()
+        print('terminated')
+        raise
 
 if __name__ == '__main__':
     main()

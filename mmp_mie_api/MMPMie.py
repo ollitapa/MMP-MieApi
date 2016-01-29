@@ -325,6 +325,14 @@ class MMPMie(Application):
         return("MMP-Mie@" + socket.gethostbyaddr(socket.gethostname())[0]
                + " version 0.1")
 
+    def getAPIVersion(self):
+        """
+        :return: Returns the supported API version
+        :rtype: str, int
+        """
+        # TODO: API version support?? How
+        return('1.0', 1)
+
     def terminate(self):
         """
         Terminates the application.
