@@ -9,7 +9,7 @@ Pyro4.config.SERIALIZERS_ACCEPTED = {'pickle'}
 server = '134.221.62.42'
 serverPort = 44389
 nshost = '134.221.62.42'  # NameServer - do not change
-nsport = 9092  # NameServer's port - do not change
+nsport = 9091  # NameServer's port - do not change
 appName = "MMPMie@mmpserver"
 hkey = ''  # Password for accessing nameServer and applications
 
