@@ -54,24 +54,6 @@ Pyro4.config.SERIALIZERS_ACCEPTED = ['pickle', 'serpent', 'json']
 Pyro4.config.SERIALIZER = 'pickle'
 
 
-### FID and PID definitions untill implemented at mupif###
-PropertyID.PID_RefractiveIndex = "PID_RefractiveIndex"
-PropertyID.PID_NumberOfRays = "PID_NumberOfRays"
-PropertyID.PID_LEDSpectrum = "PID_LEDSpectrum"
-PropertyID.PID_ParticleNumberDensity = "PID_ParticleNumberDensity"
-PropertyID.PID_ParticleRefractiveIndex = "PID_ParticleRefractiveIndex"
-PropertyID.PID_EmissionSpectrum = "PID_EmissionSpectrum"
-PropertyID.PID_ExcitationSpectrum = "PID_ExcitationSpectrum"
-PropertyID.PID_AsorptionSpectrum = "PID_AsorptionSpectrum"
-
-PropertyID.PID_ScatteringCrossSections = "PID_ScatteringCrossSections"
-PropertyID.PID_InverseCumulativeDist = "PID_InverseCumulativeDist"
-
-FieldID.FID_HeatSourceVol = "FID_HeatSourceVol"
-FieldID.FID_HeatSourceSurf = "FID_HeatSourceSurf"
-##########################################################
-
-
 class MMPMie(Application):
 
     """
@@ -94,14 +76,15 @@ class MMPMie(Application):
         # Properties
         # Key should be in form of tuple (propertyID, objectID, tstep)
         idx = pd.MultiIndex.from_tuples(
-            [("propertyID", 1.0, 1.0)],
+            [(PropertyID.PID_RefractiveIndex, 1.0, 1.0)],
             names=['propertyID', 'objectID', 'tstep'])
         self.properties = pd.Series(index=idx, dtype=Property)
 
         # Fields
         # Key should be in form of tuple (fieldID, tstep)
         idxf = pd.MultiIndex.from_tuples(
-            [("fieldID", 1.0)], names=['fieldID', 'tstep'])
+            [(FieldID.FID_Thermal_absorption_volume, 1.0)],
+            names=['fieldID', 'tstep'])
         self.fields = pd.Series(index=idxf, dtype=Field.Field)
 
         self.mieThread = None
