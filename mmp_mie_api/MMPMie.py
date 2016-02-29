@@ -54,24 +54,6 @@ Pyro4.config.SERIALIZERS_ACCEPTED = ['pickle', 'serpent', 'json']
 Pyro4.config.SERIALIZER = 'pickle'
 
 
-### FID and PID definitions untill implemented at mupif###
-PropertyID.PID_RefractiveIndex = "PID_RefractiveIndex"
-PropertyID.PID_NumberOfRays = "PID_NumberOfRays"
-PropertyID.PID_LEDSpectrum = "PID_LEDSpectrum"
-PropertyID.PID_ParticleNumberDensity = "PID_ParticleNumberDensity"
-PropertyID.PID_ParticleRefractiveIndex = "PID_ParticleRefractiveIndex"
-PropertyID.PID_EmissionSpectrum = "PID_EmissionSpectrum"
-PropertyID.PID_ExcitationSpectrum = "PID_ExcitationSpectrum"
-PropertyID.PID_AsorptionSpectrum = "PID_AsorptionSpectrum"
-
-PropertyID.PID_ScatteringCrossSections = "PID_ScatteringCrossSections"
-PropertyID.PID_InverseCumulativeDist = "PID_InverseCumulativeDist"
-
-FieldID.FID_HeatSourceVol = "FID_HeatSourceVol"
-FieldID.FID_HeatSourceSurf = "FID_HeatSourceSurf"
-##########################################################
-
-
 class MMPMie(Application):
 
     """
@@ -94,14 +76,14 @@ class MMPMie(Application):
         # Properties
         # Key should be in form of tuple (propertyID, objectID, tstep)
         idx = pd.MultiIndex.from_tuples(
-            [("propertyID", 1.0, 1.0)],
+            [(PropertyID.PID_RefractiveIndex, 1.0, 1.0)],
             names=['propertyID', 'objectID', 'tstep'])
         self.properties = pd.Series(index=idx, dtype=Property)
 
         # Fields
         # Key should be in form of tuple (fieldID, tstep)
         idxf = pd.MultiIndex.from_tuples(
-            [("fieldID", 1.0)], names=['fieldID', 'tstep'])
+            [(FieldID.FID_Thermal_absorption_volume, 1.0)], names=['fieldID', 'tstep'])
         self.fields = pd.Series(index=idxf, dtype=Field.Field)
 
         self.mieThread = None
@@ -116,15 +98,17 @@ class MMPMie(Application):
         self.fields.drop(self.fields.index, inplace=True)
 
         # Initial values
+
+        # User must set these 2 properties for other particle types in top-level simulation script !
         scatCross = Property(value=0,
-                             propID=PropertyID.PID_ScatteringCrossSections,
+                       propID=PropertyID.PID_ScatteringCrossSections,
                              valueType=ValueType.Vector,
                              time=0.0,
                              units=None,
                              objectID=objID.OBJ_PARTICLE_TYPE_1)
 
         invPhase = Property(value=0,
-                            propID=PropertyID.PID_InverseCumulativeDist,
+                         propID=PropertyID.PID_InverseCumulativeDist,
                             valueType=ValueType.Vector,
                             time=0.0,
                             units=None,
@@ -132,7 +116,7 @@ class MMPMie(Application):
         # Refractive index of particle
         v = 1.83
         nr = Property(value=v,
-                      propID=PropertyID.PID_ParticleRefractiveIndex,
+                      propID=PropertyID.PID_RefractiveIndex,
                       valueType=ValueType.Scalar,
                       time=0.0,
                       units=None,
@@ -207,7 +191,7 @@ class MMPMie(Application):
         """
 
         # Set the new property to container
-        key = (newProp.getPropertyID(), objectID, newProp.time)
+        key = (newProp.getPropertyID(), newProp.getObjectID(), newProp.time)
         self.properties[key] = newProp
 
     def getMesh(self, tstep):
@@ -251,6 +235,8 @@ class MMPMie(Application):
         # Check params and fields
         initConf.checkRequiredParameters(self.properties, PropertyID)
 
+        """
+        ## MOVED TO _startMieProcess() by MiM
         p_max = 35.0
         p_min = 3.0
         p_num = 10
@@ -278,6 +264,7 @@ class MMPMie(Application):
         # log standard deviation in microns
         sigma = 0.6
 
+        #These params could be moved to _startMieProcess? (MiM)
         params = {'n_particle': n_p,
                   'n_host': n_s,
                   'particle_mu': mu,
@@ -291,6 +278,11 @@ class MMPMie(Application):
                   'particle_max': p_max,
                   'particle_min': p_min
                   }
+        #####
+        """ 
+
+        # tstep is needed in _startmieProcess to get the Properties
+        params = {'tstep': tstep}
 
         # Start thread to start Mie calculation
         self.mieThread = threading.Thread(target=self._startMieProcess,
@@ -371,24 +363,82 @@ class MMPMie(Application):
 
     def _startMieProcess(self, **kwargs):
 
-        # Mie database
-        mieDB = mieDatabase.MieDatabase()
-        # Get parameters
-        fname = mieDB.mieParameters(**kwargs)
-        # Reload parameters to file
-        f = h5py.File(fname, 'r')
-        self.wavelengths = f['wavelengths'][:]
-        self.crossSections = f['particleData']['0']['crossSections'][:]
-        self.invCDF = f['particleData']['0']['inverseCDF'][:]
+        tstep = kwargs['tstep']
 
-        key = (PropertyID.PID_ScatteringCrossSections,
-               objID.OBJ_PARTICLE_TYPE_1,
-               0)
+        #parameters moved from solveStep() to here: (MiM)
+        p_max = 35.0
+        p_min = 3.0
+        p_num = 10
 
-        self.properties[key].value = self.crossSections
+        w_max = 1100.0
+        w_min = 100.0
+        w_num = 10
 
-        key = (PropertyID.PID_InverseCumulativeDist,
-               objID.OBJ_PARTICLE_TYPE_1,
-               0)
+        # Host medium refractive index
+        key = (PropertyID.PID_RefractiveIndex,
+               objID.OBJ_CONE, tstep)
+        n_s = self.properties[key].getValue()
+        #n_s = 1.55
 
-        self.properties[key].value = self.invCDF
+        #waves = np.linspace(w_min, w_max, w_num)
+        
+        if PropertyID.PID_RefractiveIndex in self.properties.index.get_level_values('propertyID'):
+
+            pris = self.properties.xs((PropertyID.PID_RefractiveIndex, tstep), level=('propertyID', 'tstep'))
+  
+            for i, prop in pris.iteritems():
+            
+                if prop.getObjectID() is not objID.OBJ_CONE:
+                    # Particle refractive index
+                    key = (PropertyID.PID_RefractiveIndex,
+                           prop.getObjectID(), 
+                           tstep)
+                    n_p = self.properties[key].getValue()
+                    print("n_p, objID: ", n_p, prop.getObjectID())
+                    #n_p = 1.83
+                
+                    # log mean in microns
+                    mu = 3
+                    # log standard deviation in microns
+                    sigma = 0.6
+
+                    params = {'n_particle': n_p,
+                              'n_host': n_s,
+                              'particle_mu': mu,
+                              'particle_sigma': sigma,
+                              'force_new': False,
+                              'effective_model': True,
+                              'wavelen_n': w_num,
+                              'wavelen_max': w_max,
+                              'wavelen_min': w_min,
+                              'particle_n': p_num,
+                              'particle_max': p_max,
+                              'particle_min': p_min
+                             }
+
+
+                    ######
+
+                    # Mie database
+                    mieDB = mieDatabase.MieDatabase()
+                    # Get parameters
+                    fname = mieDB.mieParameters(**params) #**kwargs)
+                    # Reload parameters to file
+                    f = h5py.File(fname, 'r')
+                    self.wavelengths = f['wavelengths'][:]
+                    self.crossSections = f['particleData']['0']['crossSections'][:]
+                    self.invCDF = f['particleData']['0']['inverseCDF'][:]
+
+                    key = (PropertyID.PID_ScatteringCrossSections,
+                           prop.getObjectID(),
+                           0)
+
+                    self.properties[key].value = self.crossSections
+
+                    key = (PropertyID.PID_InverseCumulativeDist,
+                           prop.getObjectID(),
+                           0)
+
+                    self.properties[key].value = self.invCDF
+
+
