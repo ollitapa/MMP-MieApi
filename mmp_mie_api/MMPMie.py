@@ -149,7 +149,7 @@ class MMPMie(Application):
         :param Field field: Remote field to be registered by the application
         """
         # Set the new property to container
-        key = (field.getPropertyID(), field.time)
+        key = (field.getPropertyID(), field.getTime())
         self.fields.set_value(key, field)
 
     def getProperty(self, propID, time, objectID=0):
