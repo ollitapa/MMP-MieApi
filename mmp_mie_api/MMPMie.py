@@ -83,7 +83,8 @@ class MMPMie(Application):
         # Fields
         # Key should be in form of tuple (fieldID, tstep)
         idxf = pd.MultiIndex.from_tuples(
-            [(FieldID.FID_Thermal_absorption_volume, 1.0)], names=['fieldID', 'tstep'])
+            [(FieldID.FID_Thermal_absorption_volume, 1.0)],
+            names=['fieldID', 'tstep'])
         self.fields = pd.Series(index=idxf, dtype=Field.Field)
 
         self.mieThread = None
@@ -99,16 +100,18 @@ class MMPMie(Application):
 
         # Initial values
 
-        # User must set these 2 properties for other particle types in top-level simulation script !
+        # User must set these 2 properties for other particle
+        # types in top-level
+        # simulation script !
         scatCross = Property(value=0,
-                       propID=PropertyID.PID_ScatteringCrossSections,
+                             propID=PropertyID.PID_ScatteringCrossSections,
                              valueType=ValueType.Vector,
                              time=0.0,
                              units=None,
                              objectID=objID.OBJ_PARTICLE_TYPE_1)
 
         invPhase = Property(value=0,
-                         propID=PropertyID.PID_InverseCumulativeDist,
+                            propID=PropertyID.PID_InverseCumulativeDist,
                             valueType=ValueType.Vector,
                             time=0.0,
                             units=None,
@@ -150,7 +153,7 @@ class MMPMie(Application):
         :param Field field: Remote field to be registered by the application
         """
         # Set the new property to container
-        key = (field.getPropertyID(), field.time)
+        key = (field.getPropertyID(), field.getTime())
         self.fields.set_value(key, field)
 
     def getProperty(self, propID, time, objectID=0):
@@ -235,52 +238,6 @@ class MMPMie(Application):
         # Check params and fields
         initConf.checkRequiredParameters(self.properties, PropertyID)
 
-        """
-        ## MOVED TO _startMieProcess() by MiM
-        p_max = 35.0
-        p_min = 3.0
-        p_num = 10
-
-        w_max = 1100.0
-        w_min = 100.0
-        w_num = 10
-
-        #waves = np.linspace(w_min, w_max, w_num)
-
-        # Particle refractive index
-        # key = (PropertyID.PID_ParticleRefractiveIndex,
-        #       objID.OBJ_PARTICLE_TYPE_1, tstep)
-        #n_p = self.properties[key].getValue()
-        n_p = 1.83
-
-        # Host medium refractive index
-        # key = (PropertyID.PID_RefractiveIndex,
-        #       objID.OBJ_CONE, tstep)
-        #n_s = self.properties[key].getValue()
-        n_s = 1.55
-
-        # log mean in microns
-        mu = 3
-        # log standard deviation in microns
-        sigma = 0.6
-
-        #These params could be moved to _startMieProcess? (MiM)
-        params = {'n_particle': n_p,
-                  'n_host': n_s,
-                  'particle_mu': mu,
-                  'particle_sigma': sigma,
-                  'force_new': False,
-                  'effective_model': True,
-                  'wavelen_n': w_num,
-                  'wavelen_max': w_max,
-                  'wavelen_min': w_min,
-                  'particle_n': p_num,
-                  'particle_max': p_max,
-                  'particle_min': p_min
-                  }
-        #####
-        """ 
-
         # tstep is needed in _startmieProcess to get the Properties
         params = {'tstep': tstep}
 
@@ -309,43 +266,6 @@ class MMPMie(Application):
         """
         return(not self.mieThread.isAlive())
 
-    def finishStep(self, tstep):
-        """
-        Called after a global convergence within a time step is achieved.
-
-        :param TimeStep tstep: Solution step
-        """
-
-    def getCriticalTimeStep(self):
-        """
-        :return: Returns the actual (related to current state) critical time
-         step increment
-        :rtype: float
-        """
-
-    def getAssemblyTime(self, tstep):
-        """
-        Returns the assembly time related to given time step.
-        The registered fields (inputs) should be evaluated in this time.
-
-        :param TimeStep tstep: Solution step
-        :return: Assembly time
-        :rtype: float, TimeStep
-        """
-
-    def storeState(self, tstep):
-        """
-        Store the solution state of an application.
-
-        :param TimeStep tstep: Solution step
-        """
-
-    def restoreState(self, tstep):
-        """
-        Restore the saved state of an application.
-        :param TimeStep tstep: Solution step
-        """
-
     def getApplicationSignature(self):
         """
         :return: Returns the application identification
@@ -353,6 +273,14 @@ class MMPMie(Application):
         """
         return("MMP-Mie@" + socket.gethostbyaddr(socket.gethostname())[0]
                + " version 0.1")
+
+    def getAPIVersion(self):
+        """
+        :return: Returns the supported API version
+        :rtype: str, int
+        """
+        # TODO: API version support?? How
+        return('1.0', 1)
 
     def terminate(self):
         """
@@ -365,7 +293,7 @@ class MMPMie(Application):
 
         tstep = kwargs['tstep']
 
-        #parameters moved from solveStep() to here: (MiM)
+        # parameters moved from solveStep() to here: (MiM)
         p_max = 35.0
         p_min = 3.0
         p_num = 10
@@ -381,22 +309,25 @@ class MMPMie(Application):
         #n_s = 1.55
 
         #waves = np.linspace(w_min, w_max, w_num)
-        
-        if PropertyID.PID_RefractiveIndex in self.properties.index.get_level_values('propertyID'):
 
-            pris = self.properties.xs((PropertyID.PID_RefractiveIndex, tstep), level=('propertyID', 'tstep'))
-  
+        if PropertyID.PID_RefractiveIndex in\
+                self.properties.index.get_level_values('propertyID'):
+
+            pris = self.properties.xs(
+                (PropertyID.PID_RefractiveIndex, tstep),
+                level=('propertyID', 'tstep'))
+
             for i, prop in pris.iteritems():
-            
+
                 if prop.getObjectID() is not objID.OBJ_CONE:
                     # Particle refractive index
                     key = (PropertyID.PID_RefractiveIndex,
-                           prop.getObjectID(), 
+                           prop.getObjectID(),
                            tstep)
                     n_p = self.properties[key].getValue()
                     print("n_p, objID: ", n_p, prop.getObjectID())
                     #n_p = 1.83
-                
+
                     # log mean in microns
                     mu = 3
                     # log standard deviation in microns
@@ -414,19 +345,19 @@ class MMPMie(Application):
                               'particle_n': p_num,
                               'particle_max': p_max,
                               'particle_min': p_min
-                             }
-
+                              }
 
                     ######
 
                     # Mie database
                     mieDB = mieDatabase.MieDatabase()
                     # Get parameters
-                    fname = mieDB.mieParameters(**params) #**kwargs)
+                    fname = mieDB.mieParameters(**params)  # **kwargs)
                     # Reload parameters to file
                     f = h5py.File(fname, 'r')
                     self.wavelengths = f['wavelengths'][:]
-                    self.crossSections = f['particleData']['0']['crossSections'][:]
+                    self.crossSections = f['particleData'][
+                        '0']['crossSections'][:]
                     self.invCDF = f['particleData']['0']['inverseCDF'][:]
 
                     key = (PropertyID.PID_ScatteringCrossSections,
@@ -440,5 +371,3 @@ class MMPMie(Application):
                            0)
 
                     self.properties[key].value = self.invCDF
-
-

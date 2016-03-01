@@ -27,6 +27,11 @@ setup(name='mmp_mie_api',
       entry_points={
           'console_scripts':
           ['runMieServer = mmp_mie_api.mieServer:main',
+           'runMieServerSingle=mmp_mie_api.mieServer:runSingleServerInstance',
+           'runMieServerSingleNoNat=mmp_mie_api.' +
+           'mieServer:runSingleServerInstanceNoNat',
+           'runMieServerSingleSSHtunnel=mmp_mie_api.' +
+           'mieServer:runSingleServerInstanceSSHtunnel',
            'killMieServer = mmp_mie_api.killMieServer:main']
       },
       eager_resources={},
