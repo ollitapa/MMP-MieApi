@@ -234,9 +234,9 @@ class MMPMie(Application):
             prop = self.properties[key]
 
         # Check pyro registering if applicaple
-        # if hasattr(self, '_pyroDaemon') and not hasattr(prop, '_PyroURI'):
-        #    uri = self._pyroDaemon.register(prop)
-        #    prop._PyroURI = uri
+        if hasattr(self, '_pyroDaemon') and not hasattr(prop, '_PyroURI'):
+            uri = self._pyroDaemon.register(prop)
+            prop._PyroURI = uri
 
         return(prop)
 
