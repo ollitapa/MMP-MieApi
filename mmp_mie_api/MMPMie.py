@@ -125,8 +125,20 @@ class MMPMie(Application):
                       units=None,
                       objectID=objID.OBJ_PARTICLE_TYPE_1)
 
+        # Refractive index of host material
+        vh = 1.55
+        nrh = Property(value=vh,
+                      propID=PropertyID.PID_RefractiveIndex,
+                      valueType=ValueType.Scalar,
+                      time=0.0,
+                      units=None,
+                      objectID=objID.OBJ_CONE)
+
+
         key = (nr.getPropertyID(), nr.getObjectID(), 0)
         self.properties.loc[key] = nr
+        key = (nrh.getPropertyID(), nrh.getObjectID(), 0)
+        self.properties.loc[key] = nrh
         key = (scatCross.getPropertyID(), scatCross.getObjectID(), 0)
         self.properties.loc[key] = scatCross
         key = (invPhase.getPropertyID(), invPhase.getObjectID(), 0)
@@ -303,9 +315,10 @@ class MMPMie(Application):
         w_num = 10
 
         # Host medium refractive index
-        key = (PropertyID.PID_RefractiveIndex,
-               objID.OBJ_CONE, tstep)
-        n_s = self.properties[key].getValue()
+        #key = (PropertyID.PID_RefractiveIndex, objID.OBJ_CONE, tstep)
+        #key = (PropertyID.PID_RefractiveIndex, 0, objID.OBJ_CONE)
+        n_s = self.getProperty(PropertyID.PID_RefractiveIndex, 0, objID.OBJ_CONE).getValue()
+        #n_s = self.properties[key].getValue()
         #n_s = 1.55
 
         #waves = np.linspace(w_min, w_max, w_num)
@@ -314,17 +327,19 @@ class MMPMie(Application):
                 self.properties.index.get_level_values('propertyID'):
 
             pris = self.properties.xs(
-                (PropertyID.PID_RefractiveIndex, tstep),
+                (PropertyID.PID_RefractiveIndex, 0),
                 level=('propertyID', 'tstep'))
+
 
             for i, prop in pris.iteritems():
 
                 if prop.getObjectID() is not objID.OBJ_CONE:
                     # Particle refractive index
-                    key = (PropertyID.PID_RefractiveIndex,
-                           prop.getObjectID(),
-                           tstep)
-                    n_p = self.properties[key].getValue()
+                    #key = (PropertyID.PID_RefractiveIndex,
+                           #prop.getObjectID(),
+                           #0)#tstep)
+                    #n_p = self.properties[key].getValue()
+                    n_p = self.getProperty(PropertyID.PID_RefractiveIndex, 0, prop.getObjectID()).getValue()
                     print("n_p, objID: ", n_p, prop.getObjectID())
                     #n_p = 1.83
 
