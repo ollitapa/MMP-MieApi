@@ -133,7 +133,51 @@ class MMPMie(Application):
                       time=0.0,
                       units=None,
                       objectID=objID.OBJ_CONE)
+        #NEW PROPERTIES FROM MiM: .........
+        Mu = 2.35137
+        Sigma = 0.627218
+        #p_max = 35.0
+        #p_min = 1.0
+        #p_num = 50
+        #w_max = 1100.0
+        #w_min = 100.0
+        #w_num = 1001
+     
+        mup = Property(value=Mu, propID=PropertyID.PID_ParticleMu, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
 
+        sigmap = Property(value=Sigma, propID=PropertyID.PID_ParticleSigma, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+        """
+        maxp = Property(value=p_max, propID=PropertyID.PID_Particle_max, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+
+        minp = Property(value=p_min, propID=PropertyID.PID_Particle_min, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+
+        nump = Property(value=p_num, propID=PropertyID.PID_Particle_n, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+
+        maxw = Property(value=w_max, propID=PropertyID.PID_Wavelen_max, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+
+        minw = Property(value=w_min, propID=PropertyID.PID_Wavelen_min, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+
+        numw = Property(value=w_num, propID=PropertyID.PID_Wavelen_n, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+        """
+        key = (mup.getPropertyID(), mup.getObjectID(), 0)
+        self.properties.loc[key] = mup
+        key = (sigmap.getPropertyID(), sigmap.getObjectID(), 0)
+        self.properties.loc[key] = sigmap
+        """
+        key = (maxp.getPropertyID(), maxp.getObjectID(), 0)
+        self.properties.loc[key] = maxp
+        key = (minp.getPropertyID(), minp.getObjectID(), 0)
+        self.properties.loc[key] = minp
+        key = (nump.getPropertyID(), nump.getObjectID(), 0)
+        self.properties.loc[key] = nump
+        key = (maxw.getPropertyID(), maxw.getObjectID(), 0)
+        self.properties.loc[key] = maxw
+        key = (minw.getPropertyID(), minw.getObjectID(), 0)
+        self.properties.loc[key] = minw
+        key = (numw.getPropertyID(), numw.getObjectID(), 0)
+        self.properties.loc[key] = numw
+        """
+        #End of new properties from MiM..............
 
         key = (nr.getPropertyID(), nr.getObjectID(), 0)
         self.properties.loc[key] = nr
@@ -306,13 +350,22 @@ class MMPMie(Application):
         tstep = kwargs['tstep']
 
         # parameters moved from solveStep() to here: (MiM)
+        # p* and w* are constant, make sure mmpraytracer.py has the same w* !
         p_max = 35.0
-        p_min = 3.0
-        p_num = 10
+        p_min = 1.0#3.0
+        p_num = 50#10
 
         w_max = 1100.0
         w_min = 100.0
-        w_num = 10
+        w_num = 1001#10
+        """
+        p_max = self.getProperty(PropertyID.PID_Particle_max, 0, objID.PARTICLE_TYPE_1).getValue()
+        p_min = self.getProperty(PropertyID.PID_Particle_min, 0, prop.getObjectID()).getValue()
+                    p_num = self.getProperty(PropertyID.PID_Particle_n, 0, prop.getObjectID()).getValue()
+                    w_max = self.getProperty(PropertyID.PID_Wavelen_max, 0, prop.getObjectID()).getValue()
+                    w_min = self.getProperty(PropertyID.PID_Wavelen_min, 0, prop.getObjectID()).getValue()
+                    w_num = self.getProperty(PropertyID.PID_Wavelen_n, 0, prop.getObjectID()).getValue()
+        """
 
         # Host medium refractive index
         #key = (PropertyID.PID_RefractiveIndex, objID.OBJ_CONE, tstep)
@@ -344,9 +397,14 @@ class MMPMie(Application):
                     #n_p = 1.83
 
                     # log mean in microns
-                    mu = 3
+                    #mu = 2.35137#3
+                    mu = self.getProperty(PropertyID.PID_ParticleMu, 0, prop.getObjectID()).getValue()
                     # log standard deviation in microns
-                    sigma = 0.6
+                    #sigma = 0.627218#0.6
+                    sigma = self.getProperty(PropertyID.PID_ParticleSigma, 0, prop.getObjectID()).getValue()
+
+                    
+       
 
                     params = {'n_particle': n_p,
                               'n_host': n_s,
