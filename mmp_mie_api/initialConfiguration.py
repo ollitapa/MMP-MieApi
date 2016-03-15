@@ -48,9 +48,10 @@ def checkRequiredParameters(props, pID=PropertyID):
     if pID.PID_RefractiveIndex not in props.index:
         print("RefractiveIndex not found!")
         found = False
-    if pID.PID_ParticleRefractiveIndex not in props.index:
-        print("ParticleRefractiveIndex not found!")
-        #found = False
+    #ParticleRefractiveIndex not used currently...
+    #if pID.PID_ParticleRefractiveIndex not in props.index:
+    #    print("ParticleRefractiveIndex not found!")
+    #    #found = False
 
     if not found:
         print("not all relevant parameters found!")

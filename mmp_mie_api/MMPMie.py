@@ -99,6 +99,10 @@ class MMPMie(Application):
         self.fields.drop(self.fields.index, inplace=True)
 
         # Initial values
+
+        # User must set these 2 properties for other particle
+        # types in top-level
+        # simulation script !
         scatCross = Property(value=0,
                              propID=PropertyID.PID_ScatteringCrossSections,
                              valueType=ValueType.Vector,
@@ -115,14 +119,70 @@ class MMPMie(Application):
         # Refractive index of particle
         v = 1.83
         nr = Property(value=v,
-                      propID=PropertyID.PID_ParticleRefractiveIndex,
+                      propID=PropertyID.PID_RefractiveIndex,
                       valueType=ValueType.Scalar,
                       time=0.0,
                       units=None,
                       objectID=objID.OBJ_PARTICLE_TYPE_1)
 
+        # Refractive index of host material
+        vh = 1.55
+        nrh = Property(value=vh,
+                      propID=PropertyID.PID_RefractiveIndex,
+                      valueType=ValueType.Scalar,
+                      time=0.0,
+                      units=None,
+                      objectID=objID.OBJ_CONE)
+        #NEW PROPERTIES FROM MiM: .........
+        Mu = 2.35137
+        Sigma = 0.627218
+        #p_max = 35.0
+        #p_min = 1.0
+        #p_num = 50
+        #w_max = 1100.0
+        #w_min = 100.0
+        #w_num = 1001
+     
+        mup = Property(value=Mu, propID=PropertyID.PID_ParticleMu, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+
+        sigmap = Property(value=Sigma, propID=PropertyID.PID_ParticleSigma, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+        """
+        maxp = Property(value=p_max, propID=PropertyID.PID_Particle_max, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+
+        minp = Property(value=p_min, propID=PropertyID.PID_Particle_min, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+
+        nump = Property(value=p_num, propID=PropertyID.PID_Particle_n, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+
+        maxw = Property(value=w_max, propID=PropertyID.PID_Wavelen_max, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+
+        minw = Property(value=w_min, propID=PropertyID.PID_Wavelen_min, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+
+        numw = Property(value=w_num, propID=PropertyID.PID_Wavelen_n, valueType=ValueType.Scalar, time=0.0, units=None, objectID=objID.OBJ_PARTICLE_TYPE_1)
+        """
+        key = (mup.getPropertyID(), mup.getObjectID(), 0)
+        self.properties.loc[key] = mup
+        key = (sigmap.getPropertyID(), sigmap.getObjectID(), 0)
+        self.properties.loc[key] = sigmap
+        """
+        key = (maxp.getPropertyID(), maxp.getObjectID(), 0)
+        self.properties.loc[key] = maxp
+        key = (minp.getPropertyID(), minp.getObjectID(), 0)
+        self.properties.loc[key] = minp
+        key = (nump.getPropertyID(), nump.getObjectID(), 0)
+        self.properties.loc[key] = nump
+        key = (maxw.getPropertyID(), maxw.getObjectID(), 0)
+        self.properties.loc[key] = maxw
+        key = (minw.getPropertyID(), minw.getObjectID(), 0)
+        self.properties.loc[key] = minw
+        key = (numw.getPropertyID(), numw.getObjectID(), 0)
+        self.properties.loc[key] = numw
+        """
+        #End of new properties from MiM..............
+
         key = (nr.getPropertyID(), nr.getObjectID(), 0)
         self.properties.loc[key] = nr
+        key = (nrh.getPropertyID(), nrh.getObjectID(), 0)
+        self.properties.loc[key] = nrh
         key = (scatCross.getPropertyID(), scatCross.getObjectID(), 0)
         self.properties.loc[key] = scatCross
         key = (invPhase.getPropertyID(), invPhase.getObjectID(), 0)
@@ -190,7 +250,7 @@ class MMPMie(Application):
         """
 
         # Set the new property to container
-        key = (newProp.getPropertyID(), objectID, newProp.time)
+        key = (newProp.getPropertyID(), newProp.getObjectID(), newProp.time)
         self.properties[key] = newProp
 
     def getMesh(self, tstep):
@@ -234,46 +294,8 @@ class MMPMie(Application):
         # Check params and fields
         initConf.checkRequiredParameters(self.properties, PropertyID)
 
-        p_max = 35.0
-        p_min = 3.0
-        p_num = 10
-
-        w_max = 1100.0
-        w_min = 100.0
-        w_num = 10
-
-        #waves = np.linspace(w_min, w_max, w_num)
-
-        # Particle refractive index
-        # key = (PropertyID.PID_ParticleRefractiveIndex,
-        #       objID.OBJ_PARTICLE_TYPE_1, tstep)
-        #n_p = self.properties[key].getValue()
-        n_p = 1.83
-
-        # Host medium refractive index
-        # key = (PropertyID.PID_RefractiveIndex,
-        #       objID.OBJ_CONE, tstep)
-        #n_s = self.properties[key].getValue()
-        n_s = 1.55
-
-        # log mean in microns
-        mu = 3
-        # log standard deviation in microns
-        sigma = 0.6
-
-        params = {'n_particle': n_p,
-                  'n_host': n_s,
-                  'particle_mu': mu,
-                  'particle_sigma': sigma,
-                  'force_new': False,
-                  'effective_model': True,
-                  'wavelen_n': w_num,
-                  'wavelen_max': w_max,
-                  'wavelen_min': w_min,
-                  'particle_n': p_num,
-                  'particle_max': p_max,
-                  'particle_min': p_min
-                  }
+        # tstep is needed in _startmieProcess to get the Properties
+        params = {'tstep': tstep}
 
         # Start thread to start Mie calculation
         self.mieThread = threading.Thread(target=self._startMieProcess,
@@ -325,24 +347,100 @@ class MMPMie(Application):
 
     def _startMieProcess(self, **kwargs):
 
-        # Mie database
-        mieDB = mieDatabase.MieDatabase()
-        # Get parameters
-        fname = mieDB.mieParameters(**kwargs)
-        # Reload parameters to file
-        f = h5py.File(fname, 'r')
-        self.wavelengths = f['wavelengths'][:]
-        self.crossSections = f['particleData']['0']['crossSections'][:]
-        self.invCDF = f['particleData']['0']['inverseCDF'][:]
+        tstep = kwargs['tstep']
 
-        key = (PropertyID.PID_ScatteringCrossSections,
-               objID.OBJ_PARTICLE_TYPE_1,
-               0)
+        # parameters moved from solveStep() to here: (MiM)
+        # p* and w* are constant, make sure mmpraytracer.py has the same w* !
+        p_max = 35.0
+        p_min = 1.0#3.0
+        p_num = 50#10
 
-        self.properties[key].value = self.crossSections
+        w_max = 1100.0
+        w_min = 100.0
+        w_num = 1001#10
+        """
+        p_max = self.getProperty(PropertyID.PID_Particle_max, 0, objID.PARTICLE_TYPE_1).getValue()
+        p_min = self.getProperty(PropertyID.PID_Particle_min, 0, prop.getObjectID()).getValue()
+                    p_num = self.getProperty(PropertyID.PID_Particle_n, 0, prop.getObjectID()).getValue()
+                    w_max = self.getProperty(PropertyID.PID_Wavelen_max, 0, prop.getObjectID()).getValue()
+                    w_min = self.getProperty(PropertyID.PID_Wavelen_min, 0, prop.getObjectID()).getValue()
+                    w_num = self.getProperty(PropertyID.PID_Wavelen_n, 0, prop.getObjectID()).getValue()
+        """
 
-        key = (PropertyID.PID_InverseCumulativeDist,
-               objID.OBJ_PARTICLE_TYPE_1,
-               0)
+        # Host medium refractive index
+        #key = (PropertyID.PID_RefractiveIndex, objID.OBJ_CONE, tstep)
+        #key = (PropertyID.PID_RefractiveIndex, 0, objID.OBJ_CONE)
+        n_s = self.getProperty(PropertyID.PID_RefractiveIndex, 0, objID.OBJ_CONE).getValue()
+        #n_s = self.properties[key].getValue()
+        #n_s = 1.55
 
-        self.properties[key].value = self.invCDF
+        #waves = np.linspace(w_min, w_max, w_num)
+
+        if PropertyID.PID_RefractiveIndex in\
+                self.properties.index.get_level_values('propertyID'):
+
+            pris = self.properties.xs(
+                (PropertyID.PID_RefractiveIndex, 0),
+                level=('propertyID', 'tstep'))
+
+
+            for i, prop in pris.iteritems():
+
+                if prop.getObjectID() is not objID.OBJ_CONE:
+                    # Particle refractive index
+                    #key = (PropertyID.PID_RefractiveIndex,
+                           #prop.getObjectID(),
+                           #0)#tstep)
+                    #n_p = self.properties[key].getValue()
+                    n_p = self.getProperty(PropertyID.PID_RefractiveIndex, 0, prop.getObjectID()).getValue()
+                    print("n_p, objID: ", n_p, prop.getObjectID())
+                    #n_p = 1.83
+
+                    # log mean in microns
+                    #mu = 2.35137#3
+                    mu = self.getProperty(PropertyID.PID_ParticleMu, 0, prop.getObjectID()).getValue()
+                    # log standard deviation in microns
+                    #sigma = 0.627218#0.6
+                    sigma = self.getProperty(PropertyID.PID_ParticleSigma, 0, prop.getObjectID()).getValue()
+
+                    
+       
+
+                    params = {'n_particle': n_p,
+                              'n_host': n_s,
+                              'particle_mu': mu,
+                              'particle_sigma': sigma,
+                              'force_new': False,
+                              'effective_model': True,
+                              'wavelen_n': w_num,
+                              'wavelen_max': w_max,
+                              'wavelen_min': w_min,
+                              'particle_n': p_num,
+                              'particle_max': p_max,
+                              'particle_min': p_min
+                              }
+
+                    ######
+
+                    # Mie database
+                    mieDB = mieDatabase.MieDatabase()
+                    # Get parameters
+                    fname = mieDB.mieParameters(**params)  # **kwargs)
+                    # Reload parameters to file
+                    f = h5py.File(fname, 'r')
+                    self.wavelengths = f['wavelengths'][:]
+                    self.crossSections = f['particleData'][
+                        '0']['crossSections'][:]
+                    self.invCDF = f['particleData']['0']['inverseCDF'][:]
+
+                    key = (PropertyID.PID_ScatteringCrossSections,
+                           prop.getObjectID(),
+                           0)
+
+                    self.properties[key].value = self.crossSections
+
+                    key = (PropertyID.PID_InverseCumulativeDist,
+                           prop.getObjectID(),
+                           0)
+
+                    self.properties[key].value = self.invCDF
